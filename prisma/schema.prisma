@@ -1,0 +1,171 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  // Relations
+  accountProviders   AccountProvider[]
+  categories         Category[]
+  transactions       Transaction[]
+  pendingReceipts    PendingReceipt[]
+  recurringRules     RecurringRule[]
+  userSettings       UserSettings?
+  notificationTokens NotificationToken[]
+  exportJobs         ExportJob[]
+  subscription       Subscription?
+
+  @@index([email])
+}
+
+model AccountProvider {
+  id          String @id @default(cuid())
+  userId      String
+  provider    String // 'google' | 'apple' | 'facebook'
+  providerUid String
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUid])
+  @@index([userId])
+}
+
+model Category {
+  id       String  @id @default(cuid())
+  userId   String
+  name     String
+  type     String  // 'expense' | 'income'
+  archived Boolean @default(false)
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  recurringRules RecurringRule[]
+
+  @@unique([userId, name, type])
+  @@index([userId])
+  @@index([userId, archived])
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  userId          String
+  type            String   // 'expense' | 'income'
+  amount          Decimal  @db.Decimal(12, 2)
+  currency        String   @default("USD")
+  payee           String
+  categoryId      String?
+  note            String?
+  occurredAt      DateTime @default(now())
+  source          String   // 'manual' | 'ocr' | 'bank'
+  receiptImageUrl String?
+  ocrMeta         Json?
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, occurredAt])
+  @@index([occurredAt])
+  @@index([categoryId])
+}
+
+model PendingReceipt {
+  id        String   @id @default(cuid())
+  userId    String
+  s3Key     String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model RecurringRule {
+  id         String    @id @default(cuid())
+  userId     String
+  kind       String    // 'expense' | 'income'
+  amount     Decimal   @db.Decimal(12, 2)
+  currency   String    @default("USD")
+  payee      String
+  categoryId String?
+  cadence    String    // 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'yearly'
+  nextRunAt  DateTime
+  lastRunAt  DateTime?
+
+  // Relations
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([nextRunAt])
+  @@index([userId, nextRunAt])
+}
+
+model UserSettings {
+  id                      String  @id @default(cuid())
+  userId                  String  @unique
+  nightlyReminderLocalTime String // HH:mm format
+  timezone                String  @default("UTC")
+  monthlyExportEnabled    Boolean @default(false)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model NotificationToken {
+  id       String @id @default(cuid())
+  userId   String
+  platform String // 'ios' | 'android'
+  token    String @unique
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform, token])
+  @@index([userId])
+}
+
+model ExportJob {
+  id     String  @id @default(cuid())
+  userId String
+  month  String  // YYYY-MM format
+  status String  // 'queued' | 'done' | 'failed'
+  url    String?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month])
+  @@index([userId])
+  @@index([status])
+}
+
+model Subscription {
+  id       String    @id @default(cuid())
+  userId   String    @unique
+  plan     String    // 'free' | 'premium'
+  renewsAt DateTime?
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([plan])
+}

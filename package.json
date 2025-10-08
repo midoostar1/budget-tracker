@@ -1,0 +1,20 @@
+{
+  "name": "finance-tracker",
+  "version": "1.0.0",
+  "description": "Finance tracker with Prisma and Zod",
+  "main": "index.js",
+  "scripts": {
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.20.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "prisma": "^5.20.0",
+    "typescript": "^5.6.2",
+    "@types/node": "^22.7.4"
+  }
+}
