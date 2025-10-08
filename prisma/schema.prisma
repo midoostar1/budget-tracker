@@ -1,0 +1,203 @@
+// Prisma schema for finance app
+// Provider: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum AuthProvider {
+  google
+  apple
+  facebook
+}
+
+enum TransactionType {
+  expense
+  income
+}
+
+enum TransactionSource {
+  manual
+  ocr
+  bank
+}
+
+enum DevicePlatform {
+  ios
+  android
+}
+
+enum ExportJobStatus {
+  queued
+  done
+  failed
+}
+
+enum SubscriptionPlan {
+  free
+  premium
+}
+
+enum RecurrenceCadence {
+  daily
+  weekly
+  biweekly
+  monthly
+  yearly
+}
+
+// Models
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  // Relations
+  accounts         AccountProvider[]
+  categories       Category[]
+  transactions     Transaction[]
+  pendingReceipts  PendingReceipt[]
+  recurringRules   RecurringRule[]
+  settings         UserSettings?
+  notificationKeys NotificationToken[]
+  exportJobs       ExportJob[]
+  subscription     Subscription?
+}
+
+model AccountProvider {
+  id          String       @id @default(cuid())
+  userId      String
+  provider    AuthProvider
+  providerUid String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  // Hard uniqueness: a provider UID must be globally unique per provider
+  @@unique([provider, providerUid])
+}
+
+model Category {
+  id       String          @id @default(cuid())
+  userId   String
+  name     String
+  type     TransactionType
+  archived Boolean         @default(false)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  rules        RecurringRule[]
+
+  @@index([userId])
+  // Soft-constraint helper: avoid dup names per user/type at app level
+  @@index([userId, name, type])
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  userId          String
+  type            TransactionType
+  amount          Decimal           @db.Decimal(19, 4)
+  currency        String            @db.Char(3)
+  payee           String
+  categoryId      String?
+  note            String?
+  occurredAt      DateTime
+  source          TransactionSource
+  receiptImageUrl String?
+  ocrMeta         Json?
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  // Indices for common queries
+  @@index([userId])
+  @@index([userId, occurredAt]) // time-range queries per user
+  @@index([userId, categoryId, occurredAt])
+}
+
+model PendingReceipt {
+  id        String   @id @default(cuid())
+  userId    String
+  s3Key     String   @unique
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model RecurringRule {
+  id         String            @id @default(cuid())
+  userId     String
+  kind       TransactionType
+  amount     Decimal           @db.Decimal(19, 4)
+  currency   String            @db.Char(3)
+  payee      String
+  categoryId String?
+  cadence    RecurrenceCadence
+  nextRunAt  DateTime
+  lastRunAt  DateTime?
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, nextRunAt])
+  // Soft-constraint helper: dedupe similar rules at app level
+  @@index([userId, payee, amount, cadence])
+}
+
+model UserSettings {
+  id                      String  @id @default(cuid())
+  userId                  String  @unique
+  nightlyReminderLocalTime String  @db.VarChar(5) // HH:mm
+  timezone                String
+  monthlyExportEnabled    Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NotificationToken {
+  id       String         @id @default(cuid())
+  userId   String
+  platform DevicePlatform
+  token    String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  // Hard uniqueness: a (platform, token) should not duplicate
+  @@unique([platform, token])
+  // Soft-constraint helper: dedupe per user as needed
+  @@index([userId, platform, token])
+}
+
+model ExportJob {
+  id     String          @id @default(cuid())
+  userId String
+  month  String          @db.VarChar(7) // YYYY-MM
+  status ExportJobStatus @default(queued)
+  url    String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  // Soft-constraint helper: avoid duplicate jobs per month
+  @@index([userId, month])
+}
+
+model Subscription {
+  id      String           @id @default(cuid())
+  userId  String           @unique
+  plan    SubscriptionPlan @default(free)
+  renewsAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
