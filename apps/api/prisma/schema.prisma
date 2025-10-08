@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(cuid())
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  email            String            @unique
+  displayName      String?
+  photoUrl         String?
+  accounts         AccountProvider[]
+  transactions     Transaction[]
+  categories       Category[]
+  settings         UserSettings?
+  notificationTokens NotificationToken[]
+  exportJobs       ExportJob[]
+  subscription     Subscription?
+}
+
+model AccountProvider {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  provider    String
+  providerId  String
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  @@unique([provider, providerId])
+}
+
+model Transaction {
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  amountCents   Int
+  currency      String
+  date          DateTime
+  merchant      String?
+  category      Category? @relation(fields: [categoryId], references: [id])
+  categoryId    String?
+  receiptUrl    String?
+  isRecurring   Boolean   @default(false)
+}
+
+model PendingReceipt {
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id])
+  userId        String
+  uploadKey     String    @unique
+  status        String    @default("pending")
+  ocrJobId      String?
+}
+
+model Category {
+  id        String         @id @default(cuid())
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  name      String
+  user      User           @relation(fields: [userId], references: [id])
+  userId    String
+  transactions Transaction[]
+  @@unique([userId, name])
+}
+
+model RecurringRule {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String
+  pattern    String   // cron or rrule string
+  amountCents Int
+  currency   String
+  description String?
+}
+
+model UserSettings {
+  id                String   @id @default(cuid())
+  user              User     @relation(fields: [userId], references: [id])
+  userId            String   @unique
+  notificationsEnabled Boolean @default(true)
+  timezone          String   @default("UTC")
+  defaultCurrency   String   @default("USD")
+}
+
+model NotificationToken {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  platform    String   // ios or android
+  token       String   @unique
+}
+
+model ExportJob {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  status      String   @default("pending")
+  downloadUrl String?
+}
+
+model Subscription {
+  id            String   @id @default(cuid())
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String   @unique
+  plan          String
+  status        String
+  renewsAt      DateTime?
+}

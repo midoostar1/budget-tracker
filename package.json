@@ -1,0 +1,35 @@
+{
+  "name": "finance-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.10.0",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "setup": "pnpm install && pnpm dlx husky install",
+    "dev": "pnpm --filter @apps/api dev & pnpm --filter @apps/mobile dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "format": "pnpm -r format",
+    "db:migrate": "pnpm --filter @apps/api prisma:migrate",
+    "postinstall": "husky install || true",
+    "prepare": "husky install",
+    "workspace:setup": "pnpm -r install && pnpm -r build || true",
+    "clean": "git clean -fdx -e node_modules -e .git/ -e .husky/"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "husky": "^9.1.6",
+    "lint-staged": "^15.2.10"
+  }
+}
