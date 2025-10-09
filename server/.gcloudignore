@@ -16,8 +16,6 @@ yarn-error.log
 !.env.example
 
 # Development
-src/
-test/
 *.test.ts
 *.spec.ts
 coverage/

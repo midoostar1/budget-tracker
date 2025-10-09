@@ -181,7 +181,7 @@ FACEBOOK_APP_ID="1234567890"
 FACEBOOK_APP_SECRET="abcdef123456"
 
 # Google Cloud Storage (Required for receipts)
-GCS_BUCKET_NAME="budget-tracker-receipts"
+GCS_BUCKET_NAME="receipts-813467044595"
 GCS_PROJECT_ID="${GCP_PROJECT_ID}"
 # Service account JSON will be auto-mounted in Cloud Run
 

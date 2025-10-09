@@ -14,8 +14,8 @@ const configSchema = z.object({
     .transform((val) => parseInt(val, 10))
     .pipe(z.number().min(1).max(65535)),
 
-  // Database
-  DATABASE_URL: z.string().url(),
+  // Database (relaxed validation for Cloud SQL unix sockets)
+  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
   // JWT
   JWT_SECRET: z.string().min(32),

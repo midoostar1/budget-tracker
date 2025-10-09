@@ -48,12 +48,15 @@ RUN apk add --no-cache \
     ca-certificates \
     dumb-init
 
+
 # Create non-root user for security
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nodejs
 
 # Copy production dependencies from deps stage
-COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
+# Step 18 (fixed)
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+
 
 # Copy Prisma files
 COPY --from=builder --chown=nodejs:nodejs /app/prisma ./prisma
@@ -63,6 +66,10 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 
 # Copy package.json for version info
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
+
+
+    # after copying dist/prisma/node_modules
+    RUN npx prisma generate
 
 # Set NODE_ENV to production
 ENV NODE_ENV=production
@@ -76,10 +83,10 @@ EXPOSE 3000
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Health check
+# Health check (use PORT env var with fallback to 3000)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD node -e "const port = process.env.PORT || '3000'; require('http').get('http://localhost:' + port + '/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start the application
-CMD ["node", "dist/index.js"]
+# Start the application (run migrations first, then start server)
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
 

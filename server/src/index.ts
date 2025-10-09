@@ -118,7 +118,13 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 });
 
 // Health check endpoint
-app.get('/health', async (_req: Request, res: Response) => {
+// Fast health check for Docker HEALTHCHECK and Cloud Run
+app.get('/health', (_req: Request, res: Response) => {
+  res.status(200).send('ok');
+});
+
+// Detailed health check (with database)
+app.get('/health/detailed', async (_req: Request, res: Response) => {
   try {
     // Check database connection
     await connectDatabase();
@@ -191,10 +197,12 @@ async function startServer() {
     await connectDatabase();
 
     // Start HTTP server
-    const server = app.listen(config.PORT, () => {
-      logger.info(`🚀 Server running on port ${config.PORT}`);
+    // Start server (listen on 0.0.0.0 for Cloud Run compatibility)
+    const port = process.env.PORT || '3000';
+    const server = app.listen(Number(port), '0.0.0.0', () => {
+      logger.info(`🚀 Server running on port ${port}`);
       logger.info(`📝 Environment: ${config.NODE_ENV}`);
-      logger.info(`🔗 Health check: http://localhost:${config.PORT}/health`);
+      logger.info(`🔗 Health check: http://localhost:${port}/health`);
     });
 
     // Graceful shutdown handlers
