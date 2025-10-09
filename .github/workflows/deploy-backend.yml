@@ -1,0 +1,121 @@
+name: Deploy Backend to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'server/**'
+      - '.github/workflows/deploy-backend.yml'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+env:
+  GCP_PROJECT_ID: budget-tracker-474603
+  GCP_REGION: us-central1
+  SERVICE_NAME: budget-api
+  IMAGE_NAME: gcr.io/budget-tracker-474603/mobile-backend
+
+jobs:
+  deploy:
+    name: Build and Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
+        run: |
+          gcloud auth configure-docker
+
+      - name: Build Docker image
+        working-directory: ./server
+        run: |
+          docker build -t ${{ env.IMAGE_NAME }}:latest .
+          docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Push Docker image to GCR
+        run: |
+          docker push ${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.IMAGE_NAME }}:${{ github.sha }}
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image ${{ env.IMAGE_NAME }}:${{ github.sha }} \
+            --region ${{ env.GCP_REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 512Mi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 5 \
+            --port 8080 \
+            --timeout 60 \
+            --set-secrets="DATABASE_URL=budget-tracker-database-url:latest,JWT_SECRET=budget-tracker-jwt-secret:latest,GOOGLE_WEB_CLIENT_ID=budget-tracker-google-web-client-id:latest,GOOGLE_IOS_CLIENT_ID=budget-tracker-google-ios-client-id:latest,GOOGLE_ANDROID_CLIENT_ID=budget-tracker-google-android-client-id:latest,FIREBASE_ADMIN_JSON_BASE64=budget-tracker-firebase-admin-json:latest,CRON_SECRET=budget-tracker-cron-secret:latest,GCS_BUCKET_NAME=budget-tracker-gcs-bucket-name:latest,GCS_PROJECT_ID=budget-tracker-gcs-project-id:latest" \
+            --update-labels="commit-sha=${{ github.sha }},deployed-by=github-actions"
+
+      - name: Get Service URL
+        id: get-url
+        run: |
+          SERVICE_URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.GCP_REGION }} \
+            --format="value(status.url)")
+          echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_OUTPUT
+          echo "Deployed to: $SERVICE_URL"
+
+      - name: Test Deployment
+        run: |
+          sleep 10
+          curl -f ${{ steps.get-url.outputs.SERVICE_URL }}/health || exit 1
+          echo "✅ Health check passed!"
+
+      - name: Post Deployment Comment
+        uses: actions/github-script@v7
+        if: github.event_name == 'push'
+        with:
+          script: |
+            const serviceUrl = '${{ steps.get-url.outputs.SERVICE_URL }}';
+            const commitSha = '${{ github.sha }}'.substring(0, 7);
+            
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: '${{ github.sha }}',
+              body: `🚀 **Backend Deployed to Cloud Run**\n\n✅ Service URL: ${serviceUrl}\n✅ Health: ${serviceUrl}/health\n✅ Commit: ${commitSha}\n\n**Test it:** \`curl ${serviceUrl}/health\``
+            });
+
+      - name: Deployment Summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ DEPLOYMENT SUCCESSFUL!"
+          echo ""
+          echo "Service: ${{ env.SERVICE_NAME }}"
+          echo "URL: ${{ steps.get-url.outputs.SERVICE_URL }}"
+          echo "Region: ${{ env.GCP_REGION }}"
+          echo "Image: ${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          echo ""
+          echo "Test: curl ${{ steps.get-url.outputs.SERVICE_URL }}/health"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+

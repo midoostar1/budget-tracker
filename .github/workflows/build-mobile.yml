@@ -1,0 +1,66 @@
+name: Build Mobile App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'app/**'
+      - '.github/workflows/build-mobile.yml'
+
+  # Allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Install dependencies
+        working-directory: ./app
+        run: npm ci
+
+      - name: Build with EAS
+        working-directory: ./app
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          # Build development client
+          eas build --platform android \
+            --profile development \
+            --non-interactive \
+            --no-wait
+
+      - name: Build Summary
+        run: |
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ MOBILE BUILD STARTED!"
+          echo ""
+          echo "Platform: Android"
+          echo "Profile: Development"
+          echo "Check EAS dashboard for build status"
+          echo ""
+          echo "When complete, download APK from:"
+          echo "https://expo.dev/accounts/[your-account]/projects/budget-tracker/builds"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
