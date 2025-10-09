@@ -1,0 +1,57 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+package-lock.json
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Development files
+src
+test
+*.test.ts
+*.spec.ts
+
+# Build output (will be regenerated)
+dist
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+.DS_Store
+
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+!README.md
+
+# Logs
+logs
+*.log
+
+# Testing
+coverage
+.vitest
+
+# Prisma
+prisma/migrations
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# CI/CD
+.circleci
+.travis.yml
+.gitlab-ci.yml
+

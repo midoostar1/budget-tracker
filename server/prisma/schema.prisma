@@ -1,0 +1,177 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AuthProvider {
+  google
+  apple
+  facebook
+}
+
+enum TransactionType {
+  income
+  expense
+}
+
+enum TransactionStatus {
+  cleared
+  pending_receipt
+}
+
+enum OcrStatus {
+  pending
+  processed
+  failed
+}
+
+enum Frequency {
+  daily
+  weekly
+  bi_weekly
+  monthly
+  yearly
+}
+
+enum DevicePlatform {
+  ios
+  android
+}
+
+model User {
+  id                    String                 @id @default(uuid()) @db.Uuid
+  email                 String                 @unique
+  provider              AuthProvider
+  providerId            String
+  firstName             String?
+  lastName              String?
+  subscriptionTier      String                 @default("free") // "free" or "premium"
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  
+  // Relations
+  transactions          Transaction[]
+  scheduledTransactions ScheduledTransaction[]
+  devices               Device[]
+  refreshTokens         RefreshToken[]
+  usageRecords          Usage[]
+
+  @@unique([provider, providerId], name: "provider_providerId")
+  @@index([email])
+  @@index([subscriptionTier])
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@index([expiresAt])
+}
+
+model Transaction {
+  id              String            @id @default(uuid()) @db.Uuid
+  userId          String            @db.Uuid
+  amount          Decimal?          @db.Decimal(12, 2)
+  type            TransactionType
+  category        String
+  payee           String?
+  notes           String?           @db.Text
+  transactionDate DateTime
+  status          TransactionStatus @default(pending_receipt)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  // Relations
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  receipt         Receipt?
+
+  @@index([userId])
+  @@index([transactionDate])
+  @@index([category])
+  @@index([status])
+  @@index([userId, transactionDate])
+  @@index([userId, status])
+}
+
+model Receipt {
+  id            String      @id @default(uuid()) @db.Uuid
+  transactionId String      @unique @db.Uuid
+  imageUrl      String
+  ocrStatus     OcrStatus   @default(pending)
+  ocrData       Json?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  
+  // Relations
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([ocrStatus])
+}
+
+model ScheduledTransaction {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String      @db.Uuid
+  amount      Decimal     @db.Decimal(12, 2)
+  type        TransactionType
+  description String
+  category    String
+  frequency   Frequency
+  startDate   DateTime
+  nextDueDate DateTime
+  isBill      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Relations
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([nextDueDate])
+  @@index([frequency])
+}
+
+model Device {
+  id        String         @id @default(uuid()) @db.Uuid
+  userId    String         @db.Uuid
+  fcmToken  String         @unique
+  platform  DevicePlatform
+  createdAt DateTime       @default(now())
+  
+  // Relations
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([fcmToken])
+}
+
+model Usage {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @db.Uuid
+  month           String   // Format: YYYY-MM (e.g., "2024-10")
+  receiptCaptures Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month], name: "userId_month")
+  @@index([userId])
+  @@index([month])
+}

@@ -1,0 +1,58 @@
+# This file specifies files that are *not* uploaded to Google Cloud
+# using gcloud. It follows the same syntax as .gitignore
+
+.gcloudignore
+.git
+.gitignore
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Development
+src/
+test/
+*.test.ts
+*.spec.ts
+coverage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Documentation
+*.md
+!README.md
+
+# Build artifacts (rebuilt in Docker)
+dist/
+
+# Logs
+logs/
+*.log
+
+# Testing
+.vitest/
+
+# CI/CD
+.github/
+.circleci/
+.gitlab-ci.yml
+
+# Prisma migrations (run separately)
+prisma/migrations/
+
+# Temporary
+tmp/
+temp/
+*.tmp
+
