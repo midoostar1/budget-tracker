@@ -22,11 +22,18 @@ export async function verifyGoogleIdToken(
   audience?: string
 ): Promise<SocialProfile> {
   try {
-    const client = new OAuth2Client(audience || config.GOOGLE_WEB_CLIENT_ID);
+    // Accept tokens from web, iOS, and Android clients
+    const validAudiences = [
+      config.GOOGLE_WEB_CLIENT_ID,
+      config.GOOGLE_ANDROID_CLIENT_ID,
+      config.GOOGLE_IOS_CLIENT_ID,
+    ].filter(Boolean); // Remove any undefined values
+
+    const client = new OAuth2Client();
 
     const ticket = await client.verifyIdToken({
       idToken,
-      audience: audience || config.GOOGLE_WEB_CLIENT_ID,
+      audience: audience || validAudiences,
     });
 
     const payload = ticket.getPayload();
