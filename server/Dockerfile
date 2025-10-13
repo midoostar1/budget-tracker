@@ -67,9 +67,8 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 # Copy package.json for version info
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
 
-
-    # after copying dist/prisma/node_modules
-    RUN npx prisma generate
+# Generate Prisma client in production environment
+RUN npx prisma generate
 
 # Set NODE_ENV to production
 ENV NODE_ENV=production
