@@ -82,7 +82,7 @@ app.use('/api/', globalLimiter);
 // Strict rate limiting for authentication endpoints (prevent brute force)
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 requests per 15 minutes
+  max: 100, // 100 requests per 15 minutes (increased for testing)
   message: { error: 'Too Many Requests', message: 'Too many authentication attempts. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
