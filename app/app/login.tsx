@@ -16,6 +16,7 @@ import {
   signInWithApple,
   signInWithFacebook,
 } from '../src/services/socialAuth';
+import { setupPushNotifications } from '../src/services/pushNotifications';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -39,6 +40,12 @@ export default function LoginScreen() {
 
       // Login with backend and store tokens
       await login(result.user, result.accessToken);
+
+      // Register device for push notifications (non-blocking)
+      setupPushNotifications().catch((error) => {
+        console.warn('Failed to setup push notifications:', error);
+        // Don't block login flow if push notification setup fails
+      });
 
       // Navigate to dashboard
       router.replace('/(tabs)/dashboard');

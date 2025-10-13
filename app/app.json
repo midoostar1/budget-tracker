@@ -3,6 +3,7 @@
     "name": "Budget Tracker",
     "slug": "budget-tracker",
     "version": "1.0.0",
+    "versionCode": 1,
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -55,13 +56,10 @@
       "expo-image-picker"
     ],
     "extra": {
-      "router": {
-        "origin": false
-      },
-      "eas": {
-        "projectId": "your-eas-project-id"
-      },
-      "apiBaseUrl": "https://budget-api-swpx3wltjq-uc.a.run.app",
+      "router": { "origin": false },
+      "eas": { "projectId": "your-eas-project-id" },
+      "apiBaseUrl": "https://budget-api-813467044595.us-central1.run.app",
+      "apiTimeout": 30000,
       "googleWebClientId": "813467044595-u6sqdq7n6kbtgetfp8e20p6q4koogsjg.apps.googleusercontent.com",
       "googleAndroidClientId": "813467044595-qkj5ik73qbaf70q112pm88k6tt9jbfga.apps.googleusercontent.com",
       "googleIosClientId": "813467044595-qkj5ik73qbaf70q112pm88k6tt9jbfga.apps.googleusercontent.com",

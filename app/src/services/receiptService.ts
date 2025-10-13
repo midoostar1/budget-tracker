@@ -27,11 +27,16 @@ export const receiptService = {
     try {
       const formData = new FormData();
       
-      // Create file object for upload
+      // Determine file type from URI
+      const uriParts = imageUri.split('.');
+      const fileType = uriParts[uriParts.length - 1];
+      const mimeType = fileType === 'png' ? 'image/png' : 'image/jpeg';
+      
+      // Create file object for upload with proper name and type
       const file: any = {
         uri: imageUri,
-        type: 'image/jpeg',
-        name: 'receipt.jpg',
+        type: mimeType,
+        name: `receipt.${fileType}`,
       };
       
       formData.append('image', file);

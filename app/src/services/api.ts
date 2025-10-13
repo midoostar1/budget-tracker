@@ -26,7 +26,7 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor - handle token refresh
+// Response interceptor - handle token refresh and quota errors
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
@@ -59,6 +59,9 @@ api.interceptors.response.use(
       }
     }
 
+    // For 402 (Payment Required), we preserve the error to be handled by QuotaExceededError
+    // This allows components to catch and show paywall modal
+    
     return Promise.reject(error);
   }
 );
