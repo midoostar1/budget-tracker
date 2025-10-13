@@ -49,9 +49,8 @@ jobs:
           gcloud auth configure-docker
 
       - name: Build Docker image
-        working-directory: ./server
         run: |
-          docker build -t ${{ env.IMAGE_NAME }}:latest .
+          docker build -f server/Dockerfile -t ${{ env.IMAGE_NAME }}:latest server/
           docker tag ${{ env.IMAGE_NAME }}:latest ${{ env.IMAGE_NAME }}:${{ github.sha }}
 
       - name: Push Docker image to GCR
