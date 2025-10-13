@@ -18,6 +18,9 @@ import reportsRoutes from './routes/reportsRoutes';
 
 const app = express();
 
+// Trust proxy (required for Cloud Run)
+app.set('trust proxy', true);
+
 // Attach request ID to all requests (for tracking)
 app.use(attachRequestId);
 
@@ -68,6 +71,7 @@ const globalLimiter = rateLimit({
   message: { error: 'Too Many Requests', message: 'Too many requests from this IP, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false }, // Disable validation warnings for Cloud Run
   skip: (req) => {
     // Skip rate limiting for health checks
     return req.path === '/health' || req.path === '/';
@@ -82,6 +86,7 @@ const authLimiter = rateLimit({
   message: { error: 'Too Many Requests', message: 'Too many authentication attempts. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false }, // Disable validation warnings for Cloud Run
   skipSuccessfulRequests: true, // Only count failed attempts
 });
 app.use('/api/auth/social-login', authLimiter);
@@ -94,6 +99,7 @@ const receiptUploadLimiter = rateLimit({
   message: { error: 'Too Many Requests', message: 'Upload limit exceeded. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { trustProxy: false }, // Disable validation warnings for Cloud Run
 });
 app.use('/api/receipts/upload', receiptUploadLimiter);
 app.use('/api/receipts/process', receiptUploadLimiter);
