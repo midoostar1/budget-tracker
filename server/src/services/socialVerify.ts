@@ -27,7 +27,7 @@ export async function verifyGoogleIdToken(
       config.GOOGLE_WEB_CLIENT_ID,
       config.GOOGLE_ANDROID_CLIENT_ID,
       config.GOOGLE_IOS_CLIENT_ID,
-    ].filter(Boolean); // Remove any undefined values
+    ].filter((id): id is string => typeof id === 'string' && id.length > 0);
 
     const client = new OAuth2Client();
 
