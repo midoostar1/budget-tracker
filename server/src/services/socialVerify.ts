@@ -29,6 +29,14 @@ export async function verifyGoogleIdToken(
       config.GOOGLE_IOS_CLIENT_ID,
     ].filter((id): id is string => typeof id === 'string' && id.length > 0);
 
+    // DEBUG: Log what audiences we're accepting
+    logger.info({ 
+      validAudiences,
+      webClientId: config.GOOGLE_WEB_CLIENT_ID,
+      androidClientId: config.GOOGLE_ANDROID_CLIENT_ID,
+      iosClientId: config.GOOGLE_IOS_CLIENT_ID,
+    }, 'Google token verification - valid audiences');
+
     const client = new OAuth2Client();
 
     const ticket = await client.verifyIdToken({
