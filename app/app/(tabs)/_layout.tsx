@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { theme } from '../../src/theme';
 
 // Simple icon component (replace with react-native-vector-icons or expo-icons later)
@@ -9,6 +10,8 @@ function TabBarIcon({ name, color }: { name: string; color: string }) {
 }
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tabs
       screenOptions={{
@@ -28,11 +31,13 @@ export default function TabLayout() {
         },
         headerStyle: {
           backgroundColor: theme.colors.primary,
+          height: 56 + insets.top, // Add safe area inset for status bar
         },
         headerTintColor: '#fff',
         headerTitleStyle: {
           fontWeight: 'bold',
         },
+        headerStatusBarHeight: insets.top, // Respect safe area for status bar
       }}
     >
       <Tabs.Screen
