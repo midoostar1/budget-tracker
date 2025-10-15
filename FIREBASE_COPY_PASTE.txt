@@ -1,0 +1,32 @@
+═══════════════════════════════════════════════════════════════════
+🔥 FIREBASE SETUP - COPY & PASTE VALUES
+═══════════════════════════════════════════════════════════════════
+
+PACKAGE NAME (for app registration):
+com.budgettracker.app
+
+DEBUG SHA-1 (should already be added):
+E0:46:FB:E5:9E:27:E7:E9:BF:62:D3:9C:21:29:58:7B:9A:13:AE:12
+
+RELEASE SHA-1 (add this one now):
+16:EE:0A:15:EA:11:D5:18:BE:28:5B:3E:4C:4C:86:EC:A7:C2:05:A2
+
+═══════════════════════════════════════════════════════════════════
+
+WHERE TO ADD RELEASE SHA-1:
+1. Firebase Console → ⚙️ Settings → Project settings
+2. Scroll to "Your apps" → com.budgettracker.app
+3. Find "SHA certificate fingerprints" section
+4. Click "Add fingerprint"
+5. Paste the RELEASE SHA-1 above
+6. Save/Submit
+
+WHERE TO ENABLE GOOGLE:
+1. Firebase Console → Authentication (left menu)
+2. Sign-in method tab
+3. Click "Google" row
+4. Toggle to Enable
+5. Select your email as support email
+6. Click Save
+
+═══════════════════════════════════════════════════════════════════
